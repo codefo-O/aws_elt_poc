@@ -1,0 +1,45 @@
+{
+  "name" : "Sales bronze to silver",
+  "jobMode" : "VISUAL",
+  "description" : "",
+  "role" : "arn:aws:iam::640168433728:role/s3_glue_access",
+  "executionProperty" : {
+    "maxConcurrentRuns" : 1
+  },
+  "command" : {
+    "name" : "glueetl",
+    "scriptLocation" : "s3://aws-glue-assets-640168433728-us-east-1/scripts/Sales bronze to silver.py",
+    "pythonVersion" : "3"
+  },
+  "defaultArguments" : {
+    "--enable-glue-datacatalog" : "true",
+    "--job-bookmark-option" : "job-bookmark-disable",
+    "--datalake-formats" : "iceberg",
+    "--TempDir" : "s3://aws-glue-assets-640168433728-us-east-1/temporary/",
+    "--enable-metrics" : "true",
+    "--enable-spark-ui" : "true",
+    "--extra-py-files" : "s3://aws-glue-studio-transforms-510798373988-prod-us-east-1/gs_common.py,s3://aws-glue-studio-transforms-510798373988-prod-us-east-1/gs_concat.py",
+    "--spark-event-logs-path" : "s3://aws-glue-assets-640168433728-us-east-1/sparkHistoryLogs/",
+    "--enable-job-insights" : "true",
+    "--enable-observability-metrics" : "true",
+    "--ingestion_date" : "2025-01-15",
+    "--conf" : "spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions --conf spark.sql.catalog.glue_catalog=org.apache.iceberg.spark.SparkCatalog --conf spark.sql.catalog.glue_catalog.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog --conf spark.sql.catalog.glue_catalog.io-impl=org.apache.iceberg.aws.s3.S3FileIO --conf spark.sql.catalog.glue_catalog.warehouse=file:///tmp/spark-warehouse",
+    "--enable-continuous-cloudwatch-log" : "true",
+    "--job-language" : "python"
+  },
+  "maxRetries" : 0,
+  "allocatedCapacity" : 10,
+  "timeout" : 480,
+  "maxCapacity" : 10.0,
+  "glueVersion" : "5.0",
+  "numberOfWorkers" : 10,
+  "workerType" : "G.1X",
+  "executionClass" : "STANDARD",
+  "codeGenConfigurationNodes" : "{\"node-1737104192260\":{\"CatalogSource\":{\"Database\":\"sales_analytics\",\"Name\":\"AWS Glue Data Catalog\",\"Table\":\"bronze_sales\"}},\"node-1737176883355\":{\"S3IcebergDirectTarget\":{\"AdditionalOptions\":{},\"AutoDataQuality\":{\"EvaluationContext\":\"EvaluateDataQuality_node1737176867248\",\"IsEnabled\":true},\"Compression\":\"gzip\",\"Format\":\"iceberg\",\"Inputs\":[\"node-1737176418839\"],\"Name\":\"Amazon S3\",\"PartitionKeys\":[],\"Path\":\"s3://data-lake-ips720iga\",\"SchemaChangePolicy\":{\"Database\":\"sales_analytics\",\"EnableUpdateCatalog\":true,\"Table\":\"silver_sales_by_product\",\"UpdateBehavior\":\"LOG\"}}},\"node-1737104378109\":{\"DropFields\":{\"Inputs\":[\"node-1737104340145\"],\"Name\":\"Drop Fields\",\"Paths\":[[\"year\"],[\"month\"],[\"day\"],[\"partition_3\"]]}},\"node-1737104401625\":{\"ApplyMapping\":{\"Inputs\":[\"node-1737104378109\"],\"Mapping\":[{\"Dropped\":false,\"FromPath\":[\"transaction id\"],\"FromType\":\"string\",\"ToKey\":\"transaction id\",\"ToType\":\"string\"},{\"Dropped\":false,\"FromPath\":[\"date\"],\"FromType\":\"string\",\"ToKey\":\"date\",\"ToType\":\"date\"},{\"Dropped\":false,\"FromPath\":[\"customer id\"],\"FromType\":\"string\",\"ToKey\":\"customer id\",\"ToType\":\"string\"},{\"Dropped\":false,\"FromPath\":[\"store id\"],\"FromType\":\"bigint\",\"ToKey\":\"store id\",\"ToType\":\"long\"},{\"Dropped\":false,\"FromPath\":[\"items sold\"],\"FromType\":\"string\",\"ToKey\":\"items sold\",\"ToType\":\"string\"},{\"Dropped\":false,\"FromPath\":[\"subtotal\"],\"FromType\":\"double\",\"ToKey\":\"subtotal\",\"ToType\":\"double\"},{\"Dropped\":false,\"FromPath\":[\"tax\"],\"FromType\":\"double\",\"ToKey\":\"tax\",\"ToType\":\"double\"},{\"Dropped\":false,\"FromPath\":[\"total\"],\"FromType\":\"double\",\"ToKey\":\"total\",\"ToType\":\"double\"},{\"Dropped\":false,\"FromPath\":[\"ingestion_date\"],\"FromType\":\"string\",\"ToKey\":\"ingestion_date\",\"ToType\":\"date\"}],\"Name\":\"Change Schema\"}},\"node-1737104340145\":{\"DynamicTransform\":{\"FunctionName\":\"gs_concat\",\"Inputs\":[\"node-1737104192260\"],\"Name\":\"Concatenate Columns\",\"OutputSchemas\":[{\"Columns\":[{\"Name\":\"transaction id\",\"Type\":\"string\"},{\"Name\":\"date\",\"Type\":\"string\"},{\"Name\":\"customer id\",\"Type\":\"string\"},{\"Name\":\"store id\",\"Type\":\"bigint\"},{\"Name\":\"items sold\",\"Type\":\"string\"},{\"Name\":\"subtotal\",\"Type\":\"double\"},{\"Name\":\"tax\",\"Type\":\"double\"},{\"Name\":\"total\",\"Type\":\"double\"},{\"Name\":\"year\",\"Type\":\"string\"},{\"Name\":\"month\",\"Type\":\"string\"},{\"Name\":\"day\",\"Type\":\"string\"},{\"Name\":\"partition_3\",\"Type\":\"string\"},{\"Name\":\"ingestion_date\",\"Type\":\"string\"}]}],\"Parameters\":[{\"IsOptional\":false,\"Name\":\"colName\",\"Type\":\"str\",\"Value\":[\"ingestion_date\"]},{\"IsOptional\":false,\"ListType\":\"str\",\"Name\":\"colList\",\"Type\":\"list\",\"Value\":[\"year\",\"month\",\"day\"]},{\"IsOptional\":true,\"Name\":\"spacer\",\"Type\":\"str\",\"Value\":[\"-\"]}],\"Path\":\"s3://aws-glue-studio-transforms-510798373988-prod-us-east-1/gs_concat.py\",\"TransformName\":\"gs_concat\",\"Version\":\"1.0.0\"}},\"node-1737176418839\":{\"SelectFromCollection\":{\"Index\":0,\"Inputs\":[\"node-1737104741611\"],\"Name\":\"Select From Collection\"}},\"node-1737104741611\":{\"CustomCode\":{\"ClassName\":\"MyTransform\",\"Code\":\"from awsglue.dynamicframe import DynamicFrame\\nfrom pyspark.sql.functions import split, explode, col\\nfrom pyspark.sql.types import StructType, StructField, StringType, DoubleType, IntegerType\\nimport sys\\nfrom awsglue.utils import getResolvedOptions\\n\\nargs = getResolvedOptions(sys.argv, [\\\"ingestion_date\\\"])\\ningestion_date = args[\\\"ingestion_date\\\"]\\n# Get the first frame from the collection\\ndfs = list(dfc.values())\\ninput_dyf = dfs[0]\\n\\n# Convert DynamicFrame to Spark DataFrame\\nspark_df = input_dyf.toDF()\\n\\n# Explode the items_sold column by splitting on comma\\nexploded_df = spark_df.withColumn(\\\"item\\\", explode(split(col(\\\"items sold\\\"), \\\",\\\")))\\n\\n# Create individual columns from the split values\\nsplit_df = exploded_df.withColumn(\\\"product_id\\\", split(col(\\\"item\\\"), \\\":\\\").getItem(0)) \\\\\\n    .withColumn(\\\"sale_type\\\", split(col(\\\"item\\\"), \\\":\\\").getItem(1)) \\\\\\n    .withColumn(\\\"price\\\", split(col(\\\"item\\\"), \\\":\\\").getItem(2).cast(\\\"double\\\")) \\\\\\n    .withColumn(\\\"quantity\\\", split(col(\\\"item\\\"), \\\":\\\").getItem(3).cast(\\\"int\\\"))\\n\\n# Drop the temporary columns and select all needed columns\\nfinal_df = split_df.select(\\n    \\\"transaction id\\\",\\n    \\\"date\\\",\\n    \\\"customer id\\\",\\n    \\\"store id\\\",\\n    \\\"product_id\\\",\\n    \\\"sale_type\\\",\\n    \\\"price\\\",\\n    \\\"quantity\\\",\\n    \\\"ingestion_date\\\"\\n)\\n # Rename columns to remove spaces\\nfor column in final_df.columns:\\n    new_column = column.replace(\\\" \\\", \\\"_\\\").lower()\\n    final_df = final_df.withColumnRenamed(column, new_column)\\n\\n\\n  # Apply the filter condition\\nfiltered_df = final_df.filter(final_df.ingestion_date == ingestion_date)\\n    \\n# Convert back to DynamicFrame\\nresult_dyf = DynamicFrame.fromDF(filtered_df, glueContext, \\\"split_items\\\")\\n\\n# Return as DynamicFrameCollection\\nreturn DynamicFrameCollection({\\\"transformed_data\\\": result_dyf}, glueContext)\\n\",\"Inputs\":[\"node-1737104401625\"],\"Name\":\"Custom Transform\",\"OutputSchemas\":[{\"Columns\":[{\"Name\":\"transaction_id\",\"Type\":\"string\"},{\"Name\":\"date\",\"Type\":\"date\"},{\"Name\":\"customer_id\",\"Type\":\"string\"},{\"Name\":\"store_id\",\"Type\":\"bigint\"},{\"Name\":\"product_id\",\"Type\":\"string\"},{\"Name\":\"sale_type\",\"Type\":\"string\"},{\"Name\":\"price\",\"Type\":\"double\"},{\"Name\":\"quantity\",\"Type\":\"int\"},{\"Name\":\"ingestion_date\",\"Type\":\"date\"}]}]}}}",
+  "sourceControlDetails" : {
+    "provider" : "GITHUB",
+    "repository" : "aws_elt_poc",
+    "branch" : "main",
+    "folder" : "Sales bronze to silver"
+  }
+}
